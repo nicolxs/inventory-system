@@ -49,7 +49,6 @@ func NewItemHandler(is domain.ItemService) *ItemHandler {
 	}
 }
 
-
 // CreateItem godoc
 // @Summary Create a new item
 // @Description Adds a new item to the inventory
@@ -252,7 +251,6 @@ func (h *ItemHandler) DeleteItem(c echo.Context) error {
 
 	return c.NoContent(http.StatusNoContent)
 }
-
 
 // ParseValidationErrors is a helper to convert validator.ValidationErrors into a map.
 func ParseValidationErrors(err error) map[string]string {
