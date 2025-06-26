@@ -17,7 +17,7 @@ import (
 	itemhandler "inventory-system/internal/handler"      // Alias for clarity
 	wshandler "inventory-system/internal/handler"        // Alias for clarity
 	"inventory-system/internal/realtime"
-	analyticsrepo "inventory-system/internal/repository" // If analytics had a separate repo
+	// analyticsrepo "inventory-system/internal/repository" // If analytics had a separate repo
 	itemrepo "inventory-system/internal/repository"
 	analyticsservice "inventory-system/internal/service"
 	itemservice "inventory-system/internal/service"
@@ -204,7 +204,7 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 	// Handle validation errors from go-playground/validator if not handled in specific handlers
 	var ve validator.ValidationErrors
 	if errors.As(err, &ve) {
-		validationErrors := itemhandler.parseValidationErrors(err) // Use the parser from itemhandler
+		validationErrors := itemhandler.ParseValidationErrors(err) // Use the parser from itemhandler
 		appErr := httputil.ValidationError("Input validation failed", validationErrors)
 		_ = httputil.SendErrorResponse(c, appErr)
 		return
