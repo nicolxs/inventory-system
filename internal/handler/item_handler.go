@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"inventory-system/internal/domain"
@@ -14,6 +15,16 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// Define a regular expression for alphanumeric characters and dashes.
+// ^ and $ anchor it to the beginning and end of the string.
+// [a-zA-Z0-9-]+ means one or more characters that are letters, numbers, or a dash.
+var alphaNumDashRegex = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
+
+// Custom validation function for 'alphanumdash'
+func validateAlphaNumDash(fl validator.FieldLevel) bool {
+	return alphaNumDashRegex.MatchString(fl.Field().String())
+}
+
 // ItemHandler handles HTTP requests for items.
 type ItemHandler struct {
 	itemService domain.ItemService
@@ -22,11 +33,22 @@ type ItemHandler struct {
 
 // NewItemHandler creates a new ItemHandler.
 func NewItemHandler(is domain.ItemService) *ItemHandler {
+	validate := validator.New() // Initialize a new validator
+
+	// <<<<<<< REGISTER THE CUSTOM VALIDATION HERE >>>>>>>>>
+	err := validate.RegisterValidation("alphanumdash", validateAlphaNumDash)
+	if err != nil {
+		// This is a critical setup error, so we panic.
+		// The server will fail to start, which is what we want if validation can't be set up.
+		log.Fatalf("Failed to register custom validation: %v", err)
+	}
+
 	return &ItemHandler{
 		itemService: is,
-		validate:    validator.New(), // Initialize validator
+		validate:    validate, // Use the configured validator
 	}
 }
+
 
 // CreateItem godoc
 // @Summary Create a new item
@@ -52,7 +74,7 @@ func (h *ItemHandler) CreateItem(c echo.Context) error {
 	if err := h.validate.StructCtx(c.Request().Context(), req); err != nil {
 		log.Printf("CreateItem: Validation error: %v", err)
 		// Provide more detailed validation errors if desired
-		validationErrors := parseValidationErrors(err)
+		validationErrors := ParseValidationErrors(err)
 		return httputil.SendErrorResponse(c, httputil.ValidationError("Input validation failed", validationErrors))
 	}
 
@@ -176,7 +198,7 @@ func (h *ItemHandler) UpdateItem(c echo.Context) error {
 	// Validate the request body
 	if err := h.validate.StructCtx(c.Request().Context(), req); err != nil {
 		log.Printf("UpdateItem: Validation error for ID %s: %v", id, err)
-		validationErrors := parseValidationErrors(err)
+		validationErrors := ParseValidationErrors(err)
 		return httputil.SendErrorResponse(c, httputil.ValidationError("Input validation failed", validationErrors))
 	}
 
@@ -232,8 +254,8 @@ func (h *ItemHandler) DeleteItem(c echo.Context) error {
 }
 
 
-// parseValidationErrors is a helper to convert validator.ValidationErrors into a map.
-func parseValidationErrors(err error) map[string]string {
+// ParseValidationErrors is a helper to convert validator.ValidationErrors into a map.
+func ParseValidationErrors(err error) map[string]string {
 	var ve validator.ValidationErrors
 	if errors.As(err, &ve) {
 		out := make(map[string]string, len(ve))
